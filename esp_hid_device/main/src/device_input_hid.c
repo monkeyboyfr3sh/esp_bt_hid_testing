@@ -25,6 +25,8 @@
 #include "esp_hidd.h"
 #include "esp_hid_gap.h"
 
+#include "joystick.h"
+
 static const char * TAG = "BT-HID";
 
 #if CONFIG_BT_HID_DEVICE_ENABLED
@@ -92,49 +94,41 @@ void send_mouse(uint8_t buttons, char dx, char dy, char wheel)
     esp_hidd_dev_input_set(s_bt_hid_param.hid_dev, 0, 0, buffer, 4);
 }
 
+
+// case 'q': send_mouse(1, 0, 0, 0);
+// case 'w': send_mouse(0, 0, -10, 0);
+// case 'e': send_mouse(2, 0, 0, 0);
+// case 'a': send_mouse(0, -10, 0, 0);
+// case 's': send_mouse(0, 0, 10, 0);
+// case 'd': send_mouse(0, 10, 0, 0);
 void bt_hid_demo_task(void *pvParameters)
 {
-    static const char* help_string = "########################################################################\n"\
-    "BT hid mouse demo usage:\n"\
-    "You can input these value to simulate mouse: 'q', 'w', 'e', 'a', 's', 'd', 'h'\n"\
-    "q -- click the left key\n"\
-    "w -- move up\n"\
-    "e -- click the right key\n"\
-    "a -- move left\n"\
-    "s -- move down\n"\
-    "d -- move right\n"\
-    "h -- show the help\n"\
-    "########################################################################\n";
-    printf("%s\n", help_string);
-    char c;
+    // Continuously read ADC value
+    int x_mapped = 0;
+    int y_mapped = 0;
+    int sw_state = 0;
+    int x_thresh = 2;
+    int y_thresh = 2;
+
     while (1) {
-        c = fgetc(stdin);
-        switch (c) {
-        case 'q':
-            send_mouse(1, 0, 0, 0);
-            break;
-        case 'w':
-            send_mouse(0, 0, -10, 0);
-            break;
-        case 'e':
-            send_mouse(2, 0, 0, 0);
-            break;
-        case 'a':
-            send_mouse(0, -10, 0, 0);
-            break;
-        case 's':
-            send_mouse(0, 0, 10, 0);
-            break;
-        case 'd':
-            send_mouse(0, 10, 0, 0);
-            break;
-        case 'h':
-            printf("%s\n", help_string);
-            break;
-        default:
-            break;
+
+        // Sample the joystick
+        ESP_ERROR_CHECK( get_joystick(&x_mapped, &y_mapped, &sw_state) );
+
+        // XY mouse scrolling
+        if( (abs(x_mapped) > x_thresh) || (abs(y_mapped) > y_thresh) ){
+            int x_tx = (abs(x_mapped) > x_thresh) ? x_mapped : 0;
+            int y_tx = (abs(y_mapped) > y_thresh) ? y_mapped : 0;
+            
+            send_mouse(0, x_tx, y_tx, 0);
         }
-        vTaskDelay(10 / portTICK_PERIOD_MS);
+
+        // Mouse lclick
+        if (sw_state){
+            send_mouse(1, 0, 0, 0);
+        }
+
+        vTaskDelay(pdMS_TO_TICKS(10));
     }
 }
 
@@ -228,6 +222,9 @@ esp_err_t device_input_hid_init(void)
     cod.major = ESP_BT_COD_MAJOR_DEV_PERIPHERAL;
     esp_bt_gap_set_cod(cod, ESP_BT_SET_COD_MAJOR_MINOR);
     
+    // Init joystick periph
+    joystick_init();
+
     // Delay for 1 second
     vTaskDelay(1000 / portTICK_PERIOD_MS);
     

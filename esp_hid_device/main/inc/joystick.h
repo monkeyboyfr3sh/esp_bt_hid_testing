@@ -4,6 +4,6 @@
 #include "esp_err.h"
 
 esp_err_t joystick_init(void);
-esp_err_t get_joystick(uint16_t* x_mapped, uint16_t* y_mapped, int * sw_state);
+esp_err_t get_joystick(int * x_mapped, int * y_mapped, int * sw_state);
 
 #endif

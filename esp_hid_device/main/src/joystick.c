@@ -25,27 +25,29 @@ esp_err_t joystick_init(void)
     return ESP_OK;
 }
 
-static uint16_t map_value(uint16_t value, uint16_t in_min, uint16_t in_max, uint16_t out_min, uint16_t out_max)
+static int map_value(int value, int in_min, int in_max, int out_min, int out_max)
 {
 
     // Perform mapping
     return (value - in_min) * (out_max - out_min) / (in_max - in_min) + out_min;
 }
 
-static void joysitck_remap_xy(uint16_t *x_value, uint16_t *y_value)
+static void joysitck_remap_xy(int *x_value, int *y_value)
 {
     // Map params
-    const uint16_t in_min = 0;
-    const uint16_t in_max = 0xfa0;
-    const uint16_t out_min = 0;
-    const uint16_t out_max = 20;
+    const int in_min = 0;
+    const int in_max = 0xfa0;
+    const int out_min = -10;
+    const int out_max = 10;
+    const int x_off = 1;
+    const int y_off = 1;
 
     // Now do the mapping
-    *x_value = map_value(*x_value, in_min, in_max, out_min, out_max);   
-    *y_value = map_value(*y_value, in_min, in_max, out_min, out_max);   
+    *x_value = map_value(*x_value, in_min, in_max, out_min, out_max) + x_off;   
+    *y_value = map_value(*y_value, in_min, in_max, out_min, out_max) + y_off;   
 }
 
-static esp_err_t get_joystick_xy_raw(uint16_t* x_adc_reading, uint16_t* y_adc_reading)
+static esp_err_t get_joystick_xy_raw(int* x_adc_reading, int* y_adc_reading)
 {
     const int num_samples = 64;
     int x_raw_reading = 0;
@@ -68,10 +70,10 @@ static esp_err_t get_joystick_xy_raw(uint16_t* x_adc_reading, uint16_t* y_adc_re
 
 static int get_joystick_sw(void)
 {
-    return gpio_get_level(DIGITAL_INPUT);
+    return !gpio_get_level(DIGITAL_INPUT);
 }
 
-esp_err_t get_joystick(uint16_t* x_mapped, uint16_t* y_mapped, int * sw_state)
+esp_err_t get_joystick(int * x_mapped, int * y_mapped, int * sw_state)
 {
     // Check for NULL
     if ( (x_mapped==NULL) || (y_mapped==NULL) || (sw_state==NULL) ){
