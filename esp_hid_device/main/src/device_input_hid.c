@@ -32,6 +32,7 @@ static const char * TAG = "BT-HID";
 
 #if CONFIG_BT_HID_DEVICE_ENABLED
 local_param_t s_bt_hid_param = {0};
+local_param_t idle_param = {0};
 const unsigned char mouseReportMap[] = {
     0x05, 0x01,                    // USAGE_PAGE (Generic Desktop)
     0x09, 0x02,                    // USAGE (Mouse)
@@ -85,7 +86,7 @@ esp_hid_device_config_t bt_hid_config = {
 };
 
 // send the buttons, change in x, and change in y
-void send_mouse(uint8_t buttons, char dx, char dy, char wheel)
+static void send_mouse(uint8_t buttons, char dx, char dy, char wheel)
 {
     static uint8_t buffer[4] = {0};
     buffer[0] = buttons;
@@ -101,7 +102,7 @@ void send_mouse(uint8_t buttons, char dx, char dy, char wheel)
 // case 'a': send_mouse(0, -10, 0, 0);
 // case 's': send_mouse(0, 0, 10, 0);
 // case 'd': send_mouse(0, 10, 0, 0);
-void bt_hid_demo_task(void *pvParameters)
+static void bt_hid_demo_task(void *pvParameters)
 {
     // Continuously read ADC value
     int x_mapped = 0;
@@ -134,13 +135,28 @@ void bt_hid_demo_task(void *pvParameters)
     }
 }
 
-void bt_hid_task_start_up(void)
+static void idle_task(void *pvParameters)
+{
+    while(1)
+    {
+        io_led_on(100);
+        vTaskDelay(pdMS_TO_TICKS(500));
+    }
+}
+
+static void bt_hid_task_start_up(void)
 {
     xTaskCreate(bt_hid_demo_task, "bt_hid_demo_task", 2 * 1024, NULL, configMAX_PRIORITIES - 3, &s_bt_hid_param.task_hdl);
     return;
 }
 
-void bt_hid_task_shut_down(void)
+static void idle_task_start_up(void)
+{
+    xTaskCreate(idle_task, "idle_task", 2 * 1024, NULL, configMAX_PRIORITIES - 5, &idle_param.task_hdl);
+    return;
+}
+
+static void bt_hid_task_shut_down(void)
 {
     if (s_bt_hid_param.task_hdl) {
         vTaskDelete(s_bt_hid_param.task_hdl);
@@ -148,7 +164,15 @@ void bt_hid_task_shut_down(void)
     }
 }
 
-void bt_hidd_event_callback(void *handler_args, esp_event_base_t base, int32_t id, void *event_data)
+static void idle_task_shut_down(void)
+{
+    if (idle_param.task_hdl) {
+        vTaskDelete(idle_param.task_hdl);
+        idle_param.task_hdl = NULL;
+    }
+}
+
+static void bt_hidd_event_callback(void *handler_args, esp_event_base_t base, int32_t id, void *event_data)
 {
     esp_hidd_event_t event = (esp_hidd_event_t)id;
     esp_hidd_event_data_t *param = (esp_hidd_event_data_t *)event_data;
@@ -170,6 +194,9 @@ void bt_hidd_event_callback(void *handler_args, esp_event_base_t base, int32_t i
             ESP_LOGI(TAG, "CONNECT OK");
             ESP_LOGI(TAG, "Setting to non-connectable, non-discoverable");
             esp_bt_gap_set_scan_mode(ESP_BT_NON_CONNECTABLE, ESP_BT_NON_DISCOVERABLE);
+            // Stop the idle task
+            idle_task_shut_down();
+            // Startup the hid task
             bt_hid_task_start_up();
         } else {
             ESP_LOGE(TAG, "CONNECT failed!");
@@ -193,7 +220,10 @@ void bt_hidd_event_callback(void *handler_args, esp_event_base_t base, int32_t i
     case ESP_HIDD_DISCONNECT_EVENT: {
         if (param->disconnect.status == ESP_OK) {
             ESP_LOGI(TAG, "DISCONNECT OK");
+            // Stop the hid task
             bt_hid_task_shut_down();
+            // Start up the idle task
+            idle_task_start_up();
             ESP_LOGI(TAG, "Setting to connectable, discoverable again");
             esp_bt_gap_set_scan_mode(ESP_BT_CONNECTABLE, ESP_BT_GENERAL_DISCOVERABLE);
         } else {
@@ -239,6 +269,9 @@ esp_err_t device_input_hid_init(void)
     ESP_ERROR_CHECK(
         esp_hidd_dev_init(&bt_hid_config, ESP_HID_TRANSPORT_BT, bt_hidd_event_callback, &s_bt_hid_param.hid_dev));
     
+    // Start up the idle task
+    idle_task_start_up();
+
     // Return ESP_OK to indicate successful initialization
     return ESP_OK;
 }
