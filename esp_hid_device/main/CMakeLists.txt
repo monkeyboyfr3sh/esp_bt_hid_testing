@@ -3,6 +3,7 @@ set(srcs    "main.c"
             "src/device_input_hid.c"
             "src/app_hid_shared.c"
             "src/media_hid.c"
+            "src/joystick.c"
             )
 set(include_dirs "." "./inc/")
 
