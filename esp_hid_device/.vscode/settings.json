@@ -21,6 +21,8 @@
     "esp_system.h": "c",
     "joystick_defs.h": "c",
     "esp_err.h": "c",
-    "nvs_flash.h": "c"
+    "nvs_flash.h": "c",
+    "gpio.h": "c",
+    "queue.h": "c"
   }
 }

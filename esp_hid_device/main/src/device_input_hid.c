@@ -94,7 +94,6 @@ void send_mouse(uint8_t buttons, char dx, char dy, char wheel)
     esp_hidd_dev_input_set(s_bt_hid_param.hid_dev, 0, 0, buffer, 4);
 }
 
-
 // case 'q': send_mouse(1, 0, 0, 0);
 // case 'w': send_mouse(0, 0, -10, 0);
 // case 'e': send_mouse(2, 0, 0, 0);
@@ -123,7 +122,7 @@ void bt_hid_demo_task(void *pvParameters)
             send_mouse(0, x_tx, y_tx, 0);
         }
 
-        // Mouse lclick
+        // Mouse click
         if (sw_state){
             send_mouse(1, 0, 0, 0);
         }
