@@ -750,6 +750,14 @@ static esp_err_t init_low_level(uint8_t mode)
 esp_err_t esp_hid_gap_init(uint8_t mode)
 {
     esp_err_t ret;
+
+    ESP_LOGI(TAG, "setting hid gap, mode:%d", HID_DEV_MODE);
+
+#if HID_DEV_MODE == HIDD_IDLE_MODE
+    ESP_LOGE(TAG, "Please turn on BT HID device or BLE!");
+    return;
+#endif
+
     if (!mode || mode > ESP_BT_MODE_BTDM) {
         ESP_LOGE(TAG, "Invalid mode given!");
         return ESP_FAIL;

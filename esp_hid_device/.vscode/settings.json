@@ -5,6 +5,14 @@
   "files.associations": {
     "*.txt": "cmake",
     "esp_hidd.h": "c",
-    "esp_hid_gap.h": "c"
+    "esp_hid_gap.h": "c",
+    "bt_hid.h": "c",
+    "*.inc": "c",
+    "device_input_hid.h": "c",
+    "stdlib.h": "c",
+    "app_hid_shared.h": "c",
+    "hid.h": "c",
+    "task.h": "c",
+    "esp_gatt_defs.h": "c"
   }
 }
