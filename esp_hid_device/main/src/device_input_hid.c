@@ -26,6 +26,7 @@
 #include "esp_hid_gap.h"
 
 #include "joystick.h"
+#include "io_led.h"
 
 static const char * TAG = "BT-HID";
 
@@ -118,6 +119,8 @@ void bt_hid_demo_task(void *pvParameters)
         if( (abs(x_mapped) > x_thresh) || (abs(y_mapped) > y_thresh) ){
             int x_tx = (abs(x_mapped) > x_thresh) ? x_mapped : 0;
             int y_tx = (abs(y_mapped) > y_thresh) ? y_mapped : 0;
+            
+            io_led_on(100);
             
             send_mouse(0, x_tx, y_tx, 0);
         }
@@ -223,6 +226,9 @@ esp_err_t device_input_hid_init(void)
     
     // Init joystick periph
     joystick_init();
+
+    // Init io led periph
+    io_led_init();
 
     // Delay for 1 second
     vTaskDelay(1000 / portTICK_PERIOD_MS);

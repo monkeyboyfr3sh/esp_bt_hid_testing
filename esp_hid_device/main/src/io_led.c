@@ -38,8 +38,12 @@ esp_err_t io_led_init(void)
 
 esp_err_t io_led_on(int on_period_ms)
 {
+    // Stop previous timer
+    esp_timer_stop(io_timer);    
+
     // Turn on led
     gpio_set_level(IO_LED_PIN, 1);
+    
     // Start the timer
     return esp_timer_start_periodic(io_timer, MS_TO_US(on_period_ms));    
 }
