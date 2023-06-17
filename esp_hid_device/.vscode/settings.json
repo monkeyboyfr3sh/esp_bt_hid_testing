@@ -23,6 +23,10 @@
     "esp_err.h": "c",
     "nvs_flash.h": "c",
     "gpio.h": "c",
-    "queue.h": "c"
+    "queue.h": "c",
+    "esp_bt_defs.h": "c",
+    "idle_task.h": "c",
+    "chrono": "c",
+    "*.ipp": "c"
   }
 }

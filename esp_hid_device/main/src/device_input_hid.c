@@ -27,6 +27,7 @@
 
 #include "joystick.h"
 #include "io_led.h"
+#include "idle_task.h"
 
 static const char * TAG = "BT-HID";
 
@@ -116,13 +117,17 @@ static void bt_hid_demo_task(void *pvParameters)
         // Sample the joystick
         ESP_ERROR_CHECK( get_joystick(&x_mapped, &y_mapped, &sw_state) );
 
-        // XY mouse scrolling
-        if( (abs(x_mapped) > x_thresh) || (abs(y_mapped) > y_thresh) ){
-            int x_tx = (abs(x_mapped) > x_thresh) ? x_mapped : 0;
-            int y_tx = (abs(y_mapped) > y_thresh) ? y_mapped : 0;
-            
+
+        static int x_tx;
+        static int y_tx;
+        
+        // XY mouse scrolling thresholded
+        x_tx = (abs(x_mapped) > x_thresh) ? x_mapped : 0;
+        y_tx = (abs(y_mapped) > y_thresh) ? y_mapped : 0;
+
+        if( (x_tx) || (y_tx) ){
+
             io_led_on(100);
-            
             send_mouse(0, x_tx, y_tx, 0);
         }
 
@@ -132,15 +137,6 @@ static void bt_hid_demo_task(void *pvParameters)
         }
 
         vTaskDelay(pdMS_TO_TICKS(10));
-    }
-}
-
-static void idle_task(void *pvParameters)
-{
-    while(1)
-    {
-        io_led_on(100);
-        vTaskDelay(pdMS_TO_TICKS(500));
     }
 }
 

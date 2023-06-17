@@ -5,6 +5,7 @@ set(srcs    "main.c"
             "src/media_hid.c"
             "src/joystick.c"
             "src/io_led.c"
+            "src/idle_task.c"
             )
 set(include_dirs "." "./inc/")
 
